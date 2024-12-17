@@ -1,15 +1,6 @@
 import re
 
 inp = open("input.txt").read()
-
-# inp = """
-# Register A: 2024
-# Register B: 0
-# Register C: 0
-#
-# Program: 0,3,5,4,3,0
-# """.strip()
-
 registers, program = inp.split("\n\n")
 registers = [int(x) for x in re.findall(r"\d+", registers)]
 program = [int(x) for x in re.findall(r"\d+", program)]
@@ -71,29 +62,26 @@ print(",".join(str(x) for x in run_program(program, registers)))
 a = 1
 maxlen = 0
 while True:
-    # print(a)
     output = run_program(program, [a, 0, 0])
-    # print(f"Output = {output}")
+    # print(f"A={a} O={output}")
 
-    if len(output) > maxlen:
-        maxlen = len(output)
-        print("Maxlen:", maxlen, "A:", a, a // 8)
-
-    if len(output) < len(program):
+    if output == program[-3:]:
+        print("Found bytes 1-3:", a)
+        a *= 8 * 8 * 8
+    elif output == program[-6:]:
+        print("Found bytes 4-6:", a)
+        a *= 8 * 8 * 8
+    elif output == program[-9:]:
+        print("Found bytes 7-9:", a)
+        a *= 8 * 8 * 8
+    elif output == program[-12:]:
+        print("Found bytes 10-12:", a)
+        a *= 8 * 8 * 8
+    elif output == program[-15:]:
+        print("Found bytes 13-15:", a)
         a *= 8
+    elif output == program:
+        print("Found byte 16:", a)
+        break
     else:
-        print(a * 8 - a)
-        break
-
-    if output == program:
-        # print("Found:", a)
-        break
-
-    a += 1
-    # if len(output) <= len(program):
-    #     seen = a
-    #     a += 1_000_000_000
-    # else:
-    #     if a <= seen:
-    #         break
-    # a -= 5_000_000
+        a += 1
