@@ -2,13 +2,13 @@ import re
 
 inp = open("input.txt").read()
 
-inp = """
-029A
-980A
-179A
-456A
-379A
-""".strip()
+# inp = """
+# 029A
+# 980A
+# 179A
+# 456A
+# 379A
+# """.strip()
 
 codes = inp.splitlines()
 dirs = [(0, -1), (1, 0), (0, 1), (-1, 0)]
@@ -37,59 +37,62 @@ dirpad_coords = {
 dirpad_vals = {dirpad[y][x]: (x, y) for y in range(2) for x in range(3)}
 
 
-def generic_calculate_sequence(code, pad, pad_vals):
-    cur = pad_vals["A"]
-    sequence = []
+def calculate_all_sequences(code, keypad_coords, keypad_vals):
+    def recurse(code, seq, cur):
+        if not code:
+            return [seq]
 
-    for c in code:
-        dest = pad_vals[c]
-        # print(f"cur: {cur}, dest: {dest}, to press {c}")
-        while cur != dest:
-            # print(f"{pad[cur]} -> {pad[dest]}")
-            x, y = cur
-            x2, y2 = dest
-            dx, dy = x2 - x, y2 - y
+        dest = keypad_vals[code[0]]
 
-            if dx != 0 and pad[(x + dx, y)] is not None:
-                if dx < 0:
-                    cur = (x - 1, y)
-                    sequence.append("<")
-                else:
-                    cur = (x + 1, y)
-                    sequence.append(">")
-                continue
+        if cur == dest:
+            return recurse(code[1:], seq + "A", cur)
 
-            if dy != 0 and pad[(x, y + dy)] is not None:
-                if dy < 0:
-                    cur = (x, y - 1)
-                    sequence.append("^")
-                else:
-                    cur = (x, y + 1)
-                    sequence.append("v")
-                continue
+        sequences = []
 
-        sequence.append("A")
-    return "".join(sequence)
+        x, y = cur
+        x2, y2 = dest
+        dx, dy = x2 - x, y2 - y
+
+        if dx > 0 and keypad_coords.get((x + 1, y)):
+            sequences.extend(recurse(code, seq + ">", (x + 1, y)))
+        if dy < 0 and keypad_coords.get((x, y - 1)):
+            sequences.extend(recurse(code, seq + "^", (x, y - 1)))
+        if dy > 0 and keypad_coords.get((x, y + 1)):
+            sequences.extend(recurse(code, seq + "v", (x, y + 1)))
+        if dx < 0 and keypad_coords.get((x - 1, y)):
+            sequences.extend(recurse(code, seq + "<", (x - 1, y)))
+
+        return sequences
+
+    return recurse(code, "", keypad_vals["A"])
 
 
-def calculate_sequence(key_code):
-    result = generic_calculate_sequence(key_code, keypad_coords, keypad_vals)
-    print(result)
-    result = generic_calculate_sequence(result, dirpad_coords, dirpad_vals)
-    print(result)
-    result = generic_calculate_sequence(result, dirpad_coords, dirpad_vals)
-    print(result)
-    return result
+def calculate_shortest_sequence(key_code):
+    sequences = calculate_all_sequences(key_code, keypad_coords, keypad_vals)
+    sequences = [
+        item
+        for sublist in [
+            calculate_all_sequences(seq, dirpad_coords, dirpad_vals)
+            for seq in sequences
+        ]
+        for item in sublist
+    ]
+    sequences = [
+        item
+        for sublist in [
+            calculate_all_sequences(seq, dirpad_coords, dirpad_vals)
+            for seq in sequences
+        ]
+        for item in sublist
+    ]
+    return min(sequences, key=len)
 
 
 def score(code):
-    seq = calculate_sequence(code)
+    seq = calculate_shortest_sequence(code)
     prefix = int(re.match(r"(.*)A", code).group(1))
     print(f"{len(seq)} * {prefix} = {prefix * len(seq)}")
     return len(seq) * prefix
 
 
-# print(sum(score(code) for code in codes))
-
-# TODO: this one is wrong because not every manhattan distance sequence has the same cost on the next pad :(
-print(score(codes[3]))
+print(sum(score(code) for code in codes))
