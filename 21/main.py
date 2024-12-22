@@ -25,7 +25,9 @@ def dfs(pad, cur, dest):
             yield from g(x + 1, y, seq + ">")
 
     # Optimize for paths that have the least abount of zig-zagging between directions
-    return min(g(x, y, ""), key=lambda pad: sum(a != b for a, b in zip(pad, pad[1:])))
+    return min(
+        g(x, y, ""), key=lambda path: sum(a != b for a, b in zip(path, path[1:]))
+    )
 
 
 @cache
